@@ -13,7 +13,7 @@ load_dotenv()
 class DatalakeConn:
     _instance = None
     _workers = 8
-    _multi_row_insert_limit = 1000
+    _multi_row_insert_limit = 5000
     
     def __new__(cls, catalog=None):
         if not cls._instance:
@@ -72,15 +72,10 @@ class DatalakeConn:
             row_expressions.append(str_row_data)
         
         str_expression = ','.join(row_expressions)
-        str_cols = ','.join(cols)
-        str_source_cols = ','.join(['source.'+ str(c) for c in cols])
-        sql_template = f'''MERGE INTO "{table_schema}"."{table_name}" target 
-            USING (
-                SELECT * FROM
-                (VALUES {str_expression}) as t({str_cols})
-            ) source
-            ON false WHEN NOT MATCHED THEN INSERT VALUES ({str_source_cols})
-            '''
+        # print(str_expression)
+        # str_cols = ','.join(cols)
+        sql_template = f'''INSERT INTO "{table_schema}"."{table_name}" VALUES {str_expression} '''
+        
         return self._execute(str(sql_template))
     
     def _process_row(self, row, batch,cols, table_name, table_schema):
